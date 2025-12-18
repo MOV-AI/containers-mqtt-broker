@@ -28,4 +28,5 @@ RUN apt-get update && apt-get install -y --no-install-recommends unzip && \
 
 USER 10000
 
-HEALTHCHECK --interval=30s --timeout=30s --start-period=5s --retries=3 CMD [ "echo", ">", "/dev/tcp/localhost/1883" ] || exit 1
+HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
+    CMD bash -c "echo > /dev/tcp/localhost/1883" || exit 1
