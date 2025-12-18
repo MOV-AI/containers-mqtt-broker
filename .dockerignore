@@ -1,0 +1,7 @@
+# First, ignore everything
+*
+**/*
+
+# Then, explicitly allow only what's needed for building the image
+!Dockerfile
+!config/

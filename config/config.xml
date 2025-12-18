@@ -1,0 +1,284 @@
+<?xml version="1.0"?>
+<hivemq xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:noNamespaceSchemaLocation="config.xsd">
+
+    <!-- =============================================== -->
+    <!-- HiveMQ Community Edition 2025.5 Configuration -->
+    <!-- Optimized for Robot Fleet Management          -->
+    <!-- =============================================== -->
+
+    <!-- MQTT Configuration -->
+    <mqtt>
+        <!-- Session expiry interval for robot connections (24 hours) -->
+        <session-expiry>
+            <max-interval>86400</max-interval>
+        </session-expiry>
+
+        <!-- Message expiry for retained messages (7 days) -->
+        <message-expiry>
+            <max-interval>604800</max-interval>
+        </message-expiry>
+
+        <!-- Quality of Service -->
+        <quality-of-service>
+            <!-- Maximum QoS level (0, 1, 2) -->
+            <max-qos>2</max-qos>
+        </quality-of-service>
+
+        <!-- Topic alias for efficient communication -->
+        <topic-alias>
+            <enabled>true</enabled>
+            <max-per-client>100</max-per-client>
+        </topic-alias>
+
+        <!-- Subscription identifier support -->
+        <subscription-identifier>
+            <enabled>true</enabled>
+        </subscription-identifier>
+
+        <!-- Wildcard subscriptions -->
+        <wildcard-subscriptions>
+            <enabled>true</enabled>
+        </wildcard-subscriptions>
+
+        <!-- Shared subscriptions for load balancing -->
+        <shared-subscriptions>
+            <enabled>true</enabled>
+        </shared-subscriptions>
+
+        <!-- Retained messages -->
+        <retained-messages>
+            <enabled>true</enabled>
+        </retained-messages>
+
+        <!-- Keep alive settings for robot connections -->
+        <keep-alive>
+            <max-keep-alive>600</max-keep-alive>
+            <allow-unlimited>false</allow-unlimited>
+        </keep-alive>
+    </mqtt>
+
+    <!-- Listeners Configuration -->
+    <listeners>
+        <!-- Standard MQTT TCP Listener -->
+        <tcp-listener>
+            <port>1883</port>
+            <bind-address>0.0.0.0</bind-address>
+            <name>mqtt-tcp</name>
+
+            <!-- Connection settings optimized for robot fleets -->
+            <connect-overload-protection>
+                <enabled>true</enabled>
+                <threshold>50</threshold>
+            </connect-overload-protection>
+
+            <!-- No delay for real-time robot communication -->
+            <no-delay>true</no-delay>
+        </tcp-listener>
+
+        <!-- Secure MQTT TLS Listener for production robots -->
+        <!-- <tls-tcp-listener>
+            <port>8883</port>
+            <bind-address>0.0.0.0</bind-address>
+            <name>mqtt-tls</name>
+
+            <tls>
+                <keystore>
+                    <path>/opt/hivemq/conf/keystore.jks</path>
+                    <password>changeme</password>
+                    <private-key-password>changeme</private-key-password>
+                </keystore>
+                <truststore>
+                    <path>/opt/hivemq/conf/truststore.jks</path>
+                    <password>changeme</password>
+                </truststore>
+                <protocols>
+                    <protocol>TLSv1.3</protocol>
+                    <protocol>TLSv1.2</protocol>
+                </protocols>
+                <cipher-suites>
+                    <cipher-suite>TLS_AES_256_GCM_SHA384</cipher-suite>
+                    <cipher-suite>TLS_CHACHA20_POLY1305_SHA256</cipher-suite>
+                    <cipher-suite>TLS_AES_128_GCM_SHA256</cipher-suite>
+                </cipher-suites>
+                <client-authentication-mode>OPTIONAL</client-authentication-mode>
+                <handshake-timeout>10000</handshake-timeout>
+            </tls>
+
+            <connect-overload-protection>
+                <enabled>true</enabled>
+                <threshold>50</threshold>
+            </connect-overload-protection>
+
+            <no-delay>true</no-delay>
+        </tls-tcp-listener> -->
+
+        <!-- WebSocket Listener for web-based robot management interfaces -->
+        <websocket-listener>
+            <port>8000</port>
+            <bind-address>0.0.0.0</bind-address>
+            <path>/mqtt</path>
+            <name>websocket</name>
+            <allow-extensions>true</allow-extensions>
+
+            <connect-overload-protection>
+                <enabled>true</enabled>
+                <threshold>30</threshold>
+            </connect-overload-protection>
+        </websocket-listener>
+    </listeners>
+
+    <!-- Security Configuration -->
+    <security>
+        <!-- Allow empty client identifiers (auto-generated) -->
+        <allow-empty-client-id>true</allow-empty-client-id>
+
+        <!-- Payload format validation -->
+        <payload-format-validation>false</payload-format-validation>
+
+        <!-- UTF-8 validation for topic names and payloads -->
+        <topic-format-validation>true</topic-format-validation>
+        <utf8-validation>true</utf8-validation>
+
+        <!-- Control packet size limits -->
+        <control-center-audit-log>
+            <enabled>false</enabled>
+        </control-center-audit-log>
+    </security>
+
+    <!-- Restrictions for Robot Fleet Management -->
+    <restrictions>
+        <!-- Maximum client identifier length -->
+        <max-client-id-length>200</max-client-id-length>
+
+        <!-- Maximum topic length for robot topics -->
+        <max-topic-length>500</max-topic-length>
+
+        <!-- Maximum connections per client IP (prevents single robot flooding) -->
+        <max-connections-per-client>1000</max-connections-per-client>
+
+        <!-- Maximum publish rate per client (messages per second) -->
+        <max-publish-rate-per-client>1000</max-publish-rate-per-client>
+
+        <!-- Incoming bandwidth throttling (bytes per second per client) -->
+        <incoming-bandwidth-throttling>1048576</incoming-bandwidth-throttling> <!-- 1MB/s -->
+
+        <!-- Topic hierarchy levels -->
+        <max-topic-levels>20</max-topic-levels>
+
+        <!-- Maximum subscriptions per client -->
+        <max-subscriptions-per-client>1000</max-subscriptions-per-client>
+    </restrictions>
+
+    <!-- MQTT Add-ons -->
+    <mqtt-addons>
+        <!-- Expired messages cleaning interval -->
+        <expired-messages-topic-filter>
+            <enabled>false</enabled>
+        </expired-messages-topic-filter>
+
+        <!-- Dropped messages for monitoring -->
+        <dropped-messages-topic-filter>
+            <enabled>false</enabled>
+        </dropped-messages-topic-filter>
+    </mqtt-addons>
+
+    <!-- Persistence Configuration for Robot Data -->
+    <persistence>
+        <!-- Mode for data persistence -->
+        <mode>file</mode>
+
+        <!-- File persistence settings -->
+        <file-persistence>
+            <!-- Persistence location -->
+            <persistence-folder>/opt/hivemq/data/persistence</persistence-folder>
+
+            <!-- Sync settings for robot data integrity -->
+            <sync>
+                <type>ASYNC</type>
+                <sync-period>1000</sync-period>
+            </sync>
+        </file-persistence>
+    </persistence>
+
+    <!-- Anonymous authentication (disable for production) -->
+    <anonymous-authentication>
+        <enabled>true</enabled>
+    </anonymous-authentication>
+
+    <!-- Health API -->
+    <health-api>
+        <enabled>true</enabled>
+        <listeners>
+            <http>
+                <port>8889</port>
+                <bind-address>127.0.0.1</bind-address>
+            </http>
+        </listeners>
+    </health-api>
+
+    <!-- Metrics -->
+    <metrics>
+        <enabled>true</enabled>
+        <metric-writers>
+            <jmx>
+                <enabled>true</enabled>
+            </jmx>
+        </metric-writers>
+    </metrics>
+
+    <!-- Overload Protection for High-Volume Robot Traffic -->
+    <overload-protection>
+        <enabled>true</enabled>
+
+        <!-- Memory thresholds -->
+        <heap-memory>
+            <critical-threshold>95</critical-threshold>
+            <soft-threshold>80</soft-threshold>
+        </heap-memory>
+
+        <!-- Connection limits -->
+        <client-connection>
+            <threshold>1000</threshold>
+        </client-connection>
+
+        <!-- Subscription limits -->
+        <subscription>
+            <threshold>50000</threshold>
+        </subscription>
+    </overload-protection>
+
+    <!-- MQTT 5 Features -->
+    <mqtt5>
+        <!-- User properties for robot metadata -->
+        <user-properties>
+            <enabled>true</enabled>
+            <max-count>50</max-count>
+            <max-size>8192</max-size>
+        </user-properties>
+
+        <!-- Response information -->
+        <response-information>
+            <enabled>true</enabled>
+        </response-information>
+
+        <!-- Request/response pattern support -->
+        <request-response-information>
+            <enabled>true</enabled>
+        </request-response-information>
+    </mqtt5>
+
+    <!-- Internal configurations -->
+    <internal>
+        <!-- Topic tree optimization for robot fleet hierarchies -->
+        <topic-tree>
+            <map-creation-threshold>1000</map-creation-threshold>
+        </topic-tree>
+    </internal>
+
+    <!-- Usage tracking (Community Edition) -->
+    <usage-tracking>
+        <enabled>true</enabled>
+    </usage-tracking>
+
+</hivemq>
