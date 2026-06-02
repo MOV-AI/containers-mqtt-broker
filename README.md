@@ -45,6 +45,8 @@ docker build -t mqtt-broker .
 | Variable | Default | Description |
 |----------|---------|-------------|
 | `HIVEMQ_CE_VERSION` | `2025.5` | HiveMQ version |
+| `JAVA_OPTS` | `
+` | JVM options, including heap cap |
 | `INFLUXDB_URL` | `http://influxdb:8086` | InfluxDB connection |
 | `INFLUXDB_USERNAME` | `telegraf` | InfluxDB username |
 | `INFLUXDB_PASSWORD` | `telegraf` | InfluxDB password |

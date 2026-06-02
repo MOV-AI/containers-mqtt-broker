@@ -53,6 +53,7 @@ services:
       - TZ=Europe/Lisbon
       - TZDATA_TZ=Europe/Lisbon
       - TZDATA=/usr/share/zoneinfo
+      - JAVA_OPTS=-XX:+UnlockExperimentalVMOptions -XX:+UseNUMA -Xms350m -Xmx512m
     depends_on:
       - influxdb
     networks:
