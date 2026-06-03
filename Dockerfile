@@ -10,6 +10,7 @@ LABEL environment="release"
 
 # Environment variables
 ENV ENV="release" \
+    HIVEMQ_JMX_ENABLED=false \
     HIVEMQ_INFLUXDB_EXTENSION_VERSION="4.1.7"
 
 # Copy configuration files

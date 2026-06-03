@@ -51,6 +51,11 @@ docker build -t mqtt-broker .
 | `INFLUXDB_USERNAME` | `telegraf` | InfluxDB username |
 | `INFLUXDB_PASSWORD` | `telegraf` | InfluxDB password |
 
+**Notes**:
+- Adjust `JAVA_OPTS` for production workloads to balance performance and resource usage.
+- Default value `HIVEMQ_JMX_ENABLED=false` disables **Java Management Extensions (JMX)**, which HiveMQ CE 2026.5 enables by default.
+ JMX is a Java protocol for remote monitoring and management of the JVM (heap, threads, garbage collection, etc.).
+
 ### Key Settings (config/config.xml)
 
 - Session expiry: 24 hours
@@ -126,7 +131,7 @@ docker compose logs -f
 
 Build with custom HiveMQ version:
 ```bash
-docker build --build-arg HIVEMQ_CE_VERSION=2025.4 -t mqtt-broker .
+docker build --build-arg HIVEMQ_CE_VERSION=2026.5 -t mqtt-broker .
 ```
 
 Clean and rebuild:
