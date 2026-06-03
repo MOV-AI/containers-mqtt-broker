@@ -14,7 +14,7 @@ ENV ENV="release" \
     HIVEMQ_INFLUXDB_EXTENSION_VERSION="4.1.7"
 
 # Copy configuration files
-COPY config/ /opt/hivemq/conf/
+COPY config/hivemq/ /opt/hivemq/conf/
 
 # Install plugins
 # 1. HiveMQ InfluxDB Monitoring Extension

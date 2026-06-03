@@ -60,12 +60,30 @@ services:
       - influxdb
     volumes:
       - mqtt-broker:/opt/hivemq/data
-      - ./config/:/opt/hivemq/conf/
+      - ./config/hivemq:/opt/hivemq/conf/
+  mqtt-edge-broker:
+    build:
+      context: .
+      dockerfile: Dockerfile.mosquitto
+    ports:
+      - "1884:1883"
+      - "9001:9001"
+    restart: always
+    environment:
+      - TZ=Europe/Lisbon
+      - TZDATA_TZ=Europe/Lisbon
+      - TZDATA=/usr/share/zoneinfo
+    networks:
+      - influxdb
+    volumes:
+      - mqtt-edge-broker:/opt/hivemq/conf/ # Note: parity with mqtt-broker for data persistence
+      - ./config/mosquitto/mosquitto.conf:/mosquitto/config/mosquitto.conf:ro
 volumes:
   influxdb:
   monitoring-chronograf:
   monitoring-kapacitor:
   mqtt-broker:
+  mqtt-edge-broker:
 
 networks:
   influxdb:

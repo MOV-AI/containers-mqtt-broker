@@ -1,0 +1,16 @@
+FROM eclipse-mosquitto:2.0
+
+# Labels
+LABEL description="MOV.AI MQTT Edge Broker Image"
+LABEL maintainer="devops@mov.ai"
+LABEL movai="mqtt-edge-broker"
+LABEL environment="release"
+
+# Custom mosquitto config for edge workloads
+COPY config/mosquitto/mosquitto.conf /mosquitto/config/mosquitto.conf
+
+# Ensure writable runtime paths for UID used by base image
+RUN mkdir -p /mosquitto/data /mosquitto/log && \
+    chown -R mosquitto:mosquitto /mosquitto
+
+EXPOSE 1883 9001
