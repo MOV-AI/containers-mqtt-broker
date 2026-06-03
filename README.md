@@ -1,6 +1,6 @@
 # MQTT Broker Container
 
-Production-ready MQTT broker solution based on HiveMQ Community Edition 2025.5, optimized for IoT devices and robot fleet management with integrated InfluxDB monitoring.
+Production-ready MQTT broker solution based on HiveMQ Community Edition 2026.5, optimized for IoT devices and robot fleet management with integrated InfluxDB monitoring.
 
 ## Features
 
