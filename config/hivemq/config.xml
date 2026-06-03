@@ -3,7 +3,7 @@
         xsi:noNamespaceSchemaLocation="config.xsd">
 
     <!-- =============================================== -->
-    <!-- HiveMQ Community Edition 2025.5 Configuration -->
+    <!-- HiveMQ Community Edition 2026.5 Configuration -->
     <!-- Optimized for Robot Fleet Management          -->
     <!-- =============================================== -->
 
@@ -168,6 +168,9 @@
 
         <!-- Maximum subscriptions per client -->
         <max-subscriptions-per-client>1000</max-subscriptions-per-client>
+
+        <!-- Control packet size limits (2026.5 enhancement) -->
+        <max-packet-size>4096</max-packet-size>
     </restrictions>
 
     <!-- MQTT Add-ons -->
@@ -222,7 +225,7 @@
         <enabled>true</enabled>
         <metric-writers>
             <jmx>
-                <enabled>true</enabled>
+                <enabled>false</enabled>
             </jmx>
         </metric-writers>
     </metrics>
@@ -233,8 +236,8 @@
 
         <!-- Memory thresholds -->
         <heap-memory>
-            <critical-threshold>95</critical-threshold>
-            <soft-threshold>80</soft-threshold>
+            <critical-threshold>90</critical-threshold>
+            <soft-threshold>75</soft-threshold>
         </heap-memory>
 
         <!-- Connection limits -->

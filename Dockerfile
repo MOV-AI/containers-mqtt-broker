@@ -1,4 +1,4 @@
-ARG HIVEMQ_CE_VERSION=2025.5
+ARG HIVEMQ_CE_VERSION=2026.5
 
 FROM hivemq/hivemq-ce:${HIVEMQ_CE_VERSION}
 
@@ -10,12 +10,14 @@ LABEL environment="release"
 
 # Environment variables
 ENV ENV="release" \
+    HIVEMQ_JMX_ENABLED=false \
     HIVEMQ_INFLUXDB_EXTENSION_VERSION="4.1.7"
 
 # Copy configuration files
-COPY config/ /opt/hivemq/conf/
+COPY config/hivemq/ /opt/hivemq/conf/
+COPY config/health_check.sh /usr/local/bin/health_check.sh
 
-# Install plugins
+# Install plugins and health check script
 # 1. HiveMQ InfluxDB Monitoring Extension
 USER root
 RUN apt-get update && apt-get install -y --no-install-recommends unzip && \
@@ -24,9 +26,11 @@ RUN apt-get update && apt-get install -y --no-install-recommends unzip && \
     -o /tmp/hivemq-influxdb-extension.zip && \
     unzip /tmp/hivemq-influxdb-extension.zip -d /opt/hivemq/extensions/ && \
     rm /tmp/hivemq-influxdb-extension.zip && \
-    cp -vf /opt/hivemq/conf/extensions/hivemq-influxdb-extension/influxdb.properties /opt/hivemq/extensions/hivemq-influxdb-extension/
+    cp -vf /opt/hivemq/conf/extensions/hivemq-influxdb-extension/influxdb.properties /opt/hivemq/extensions/hivemq-influxdb-extension/ && \
+    mkdir -p /usr/local/bin && \
+    chmod +x /usr/local/bin/health_check.sh
 
 USER 10000
 
-HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
-    CMD bash -c "echo > /dev/tcp/localhost/1883" || exit 1
+HEALTHCHECK --interval=30s --timeout=3s --start-period=10s --retries=3 \
+    CMD /usr/local/bin/health_check.sh

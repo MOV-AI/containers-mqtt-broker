@@ -1,9 +1,5 @@
-name: "Build&Deploy mqtt-broker images"
-
+name: "Build&Deploy docker images"
 on:
-  # Trigger the workflow on push or pull request
-  # but only for the main branch
-  # or on tag of type v*.*.*
   push:
     branches:
       - main
@@ -12,21 +8,16 @@ on:
   pull_request:
     branches:
       - main
-      - dev
   release:
     types: [released]
 jobs:
-  mqtt-broker:
-    uses: MOV-AI/.github/.github/workflows/docker-workflow.yml@v2
+  build-and-deploy:
+    uses: MOV-AI/.github/.github/workflows/docker-workflow.yml@v3
     with:
-      docker_file: ./Dockerfile
-      docker_image: qa/mqtt-broker
+      manifest_file: images-manifest.yml
+      create_release: ${{ contains(github.ref, 'refs/heads/main') || contains(github.ref, 'refs/tags/v') }}
       deploy: ${{ contains(github.ref, 'refs/heads/main') || contains(github.ref, 'refs/tags/v')}}
-      version: ${GITHUB_REF##*/}
       push_latest: ${{ contains(github.ref, 'refs/heads/main') || contains(github.ref, 'refs/tags/v') }}
-      public: true
-      public_image: ce/mqtt-broker
-      snyk_check: true
     secrets:
       registry_user: ${{ secrets.PORTUS_APP_USER }}
       registry_password: ${{ secrets.PORTUS_APP_TOKEN }}
@@ -35,3 +26,6 @@ jobs:
       github_registry_user: ${{ secrets.RAISE_BOT_COMMIT_USER }}
       github_registry_password: ${{ secrets.RAISE_BOT_COMMIT_PASSWORD }}
       snyk_token: ${{ secrets.SNYK_TOKEN }}
+      commit_user: ${{ secrets.RAISE_BOT_COMMIT_USER }}
+      commit_mail: ${{ secrets.RAISE_BOT_COMMIT_MAIL }}
+      commit_token: ${{ secrets.RAISE_BOT_COMMIT_PASSWORD }}

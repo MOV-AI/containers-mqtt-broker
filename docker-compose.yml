@@ -1,10 +1,47 @@
 services:
+  telegraf:
+    image: registry.cloud.mov.ai/qa/telegraf:1.4.1
+    networks:
+      - influxdb
+    volumes:
+      - "/etc:/hostfs/etc:ro"
+      - "/sys:/hostfs/sys:ro"
+      - "/var:/hostfs/var:ro"
+      - "/run:/hostfs/run:ro"
+      - "/proc:/hostfs/proc:ro"
+      - "/run/udev:/run/udev:ro"
+      - "/var/run/docker.sock:/var/run/docker.sock:rw"
+      - ./config/telegraf/telegraf_production.conf:/etc/telegraf/telegraf_production.conf:ro
+    # telegraf does not run as root
+    # get access to docker socket for telegraf user on host and on container
+    # to be able to collect docker stats
+    user: "telegraf:${TELEGRAF_GID}"
+    privileged: true
+    security_opt:
+      - apparmor:unconfined
+    restart: always
+    depends_on:
+      - influxdb
+    environment:
+      - TZ=Europe/Lisbon
+      - TZDATA_TZ=Europe/Lisbon
+      - TZDATA=/usr/share/zoneinfo
+      - TELEGRAF_HOSTNAME=telegraf
+      - TELEGRAF_CONFIG_LEVEL=production
+      - HOST_ETC=/hostfs/etc
+      - HOST_PROC=/hostfs/proc
+      - HOST_SYS=/hostfs/sys
+      - HOST_VAR=/hostfs/var
+      - HOST_RUN=/hostfs/run
+      - HOST_MOUNT_PREFIX=/hostfs
+      - REDIS_SERVERS=[]
   influxdb:
     image: pubregistry.aws.cloud.mov.ai/ce/influxdb:v1.2.1
     ports:
       - "8086:8086"
     volumes:
       - influxdb:/var/lib/influxdb
+      - ./config/influxdb/influxdb.conf:/etc/influxdb/influxdb.conf:ro
     networks:
       - influxdb
     environment:
@@ -53,18 +90,37 @@ services:
       - TZ=Europe/Lisbon
       - TZDATA_TZ=Europe/Lisbon
       - TZDATA=/usr/share/zoneinfo
+      - JAVA_OPTS=-XX:+UnlockExperimentalVMOptions -XX:+UseNUMA -Xms350m -Xmx512m
     depends_on:
       - influxdb
     networks:
       - influxdb
     volumes:
       - mqtt-broker:/opt/hivemq/data
-      - ./config/:/opt/hivemq/conf/
+      - ./config/hivemq:/opt/hivemq/conf/
+  mqtt-edge-broker:
+    build:
+      context: .
+      dockerfile: Dockerfile.mosquitto
+    ports:
+      - "1884:1883"
+      - "9001:9001"
+    restart: always
+    environment:
+      - TZ=Europe/Lisbon
+      - TZDATA_TZ=Europe/Lisbon
+      - TZDATA=/usr/share/zoneinfo
+    networks:
+      - influxdb
+    volumes:
+      - mqtt-edge-broker:/opt/hivemq/conf/ # Note: parity with mqtt-broker for data persistence
+      - ./config/mosquitto/mosquitto.conf:/mosquitto/config/mosquitto.conf:ro
 volumes:
   influxdb:
   monitoring-chronograf:
   monitoring-kapacitor:
   mqtt-broker:
+  mqtt-edge-broker:
 
 networks:
   influxdb:
