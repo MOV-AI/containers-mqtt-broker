@@ -5,7 +5,25 @@ All notable changes to the MQTT Broker container project are documented in this 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## 1.1.0 [2024-06-01]
+## 1.2.1 [Unreleased]
+
+### Added
+- **Parallel dual-broker profile**: Mosquitto 2.0 edge broker runs alongside HiveMQ CE
+- `mqtt-edge-broker` service (Dockerfile.mosquitto) with dedicated config and ports (1884, 9001)
+- Edge broker config: `config/mosquitto/mosquitto.conf` with conservative resource limits
+- Migration guide: `docs/MIGRATION_GUIDE.md` for gradual HiveMQ → Mosquitto transition
+- Manifest-based CI: Both broker images built in parallel via `images-manifest.yml`
+- Makefile: Updated to build both `mqtt-broker` and `mqtt-edge-broker` images
+
+### Changed
+- docker-compose now orchestrates both fleet manager (HiveMQ) and edge broker (Mosquitto) services
+- `.dockerignore`: Expanded to include Dockerfile.mosquitto and config subtree
+- README: Added dual-profile documentation and edge broker quick-start examples
+
+### Deprecated
+- Single-image workflow; new deployments should explicitly choose broker profile(s)
+
+## 1.1.1 [2024-06-01]
 
 ### Added
 - HiveMQ Community Edition 2026.5 support (upgraded from 2025.5)
