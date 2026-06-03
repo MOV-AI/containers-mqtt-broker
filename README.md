@@ -156,13 +156,32 @@ reportingInterval=10
 
 ## Monitoring
 
+### Dashboards
 Access monitoring dashboard at `http://localhost:8888/monitoring` for:
 - Real-time broker performance
 - Connection and message statistics
 - System resource utilization
 - Historical trends
 
-Health check: `http://localhost:8889`
+Health check: `http://localhost:8889` (HiveMQ fleet broker)
+
+### Metrics Collection
+
+#### HiveMQ Fleet Broker
+Metrics collected via native InfluxDB extension (`config/hivemq/extensions/hivemq-influxdb-extension/`):
+- Connection counts and rates
+- Message throughput (publish/subscribe)
+- Resource usage (heap, threads)
+- Client session states
+
+#### Mosquitto Edge Broker
+Metrics collected via Telegraf MQTT consumer (30s delay):
+- Uptime and broker status
+- Connected client counts (current/maximum)
+- Message/byte rates (1-minute moving average)
+- Source: `$SYS/broker/*` topics published every 10 seconds
+
+**Database**: InfluxDB `telegraf` (UDP, low latency); measurement prefix: `mqtt_consumer`
 
 Data is automatically stored in InfluxDB with Docker volumes for persistence.
 
