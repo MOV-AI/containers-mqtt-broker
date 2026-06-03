@@ -29,6 +29,11 @@ Production-ready MQTT broker solution with 2 different runtime profiles:
 The docker compose file orchestrates both HiveMQ CE and Mosquitto brokers in parallel. To start both:
 
 ```bash
+
+# Get the docker group ID to allow telegraf to access Docker socket
+DOCKER_GID=$(getent group docker | cut -d: -f3)
+echo "TELEGRAF_GID=$DOCKER_GID" >> .env
+
 # Start the brokers
 docker compose up -d
 
