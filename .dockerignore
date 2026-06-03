@@ -4,4 +4,6 @@
 
 # Then, explicitly allow only what's needed for building the image
 !Dockerfile
+!Dockerfile.mosquitto
 !config/
+!config/**

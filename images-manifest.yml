@@ -1,0 +1,13 @@
+version: 1.1.1
+
+images:
+  - name: mqtt-broker
+    docker_file: Dockerfile
+    docker_image: qa/mqtt-broker
+    public_image: ce/mqtt-broker
+    public: true
+  - name: mqtt-edge-broker
+    docker_file: Dockerfile.mosquitto
+    docker_image: qa/mqtt-edge-broker
+    public_image: ce/mqtt-edge-broker
+    public: true
