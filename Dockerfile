@@ -1,4 +1,4 @@
-ARG HIVEMQ_CE_VERSION=2025.5
+ARG HIVEMQ_CE_VERSION=2026.5
 
 FROM hivemq/hivemq-ce:${HIVEMQ_CE_VERSION}
 
@@ -10,6 +10,7 @@ LABEL environment="release"
 
 # Environment variables
 ENV ENV="release" \
+    HIVEMQ_JMX_ENABLED=false \
     HIVEMQ_INFLUXDB_EXTENSION_VERSION="4.1.7"
 
 # Copy configuration files
