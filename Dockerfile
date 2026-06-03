@@ -15,8 +15,9 @@ ENV ENV="release" \
 
 # Copy configuration files
 COPY config/hivemq/ /opt/hivemq/conf/
+COPY config/health_check.sh /usr/local/bin/health_check.sh
 
-# Install plugins
+# Install plugins and health check script
 # 1. HiveMQ InfluxDB Monitoring Extension
 USER root
 RUN apt-get update && apt-get install -y --no-install-recommends unzip && \
@@ -25,13 +26,11 @@ RUN apt-get update && apt-get install -y --no-install-recommends unzip && \
     -o /tmp/hivemq-influxdb-extension.zip && \
     unzip /tmp/hivemq-influxdb-extension.zip -d /opt/hivemq/extensions/ && \
     rm /tmp/hivemq-influxdb-extension.zip && \
-    cp -vf /opt/hivemq/conf/extensions/hivemq-influxdb-extension/influxdb.properties /opt/hivemq/extensions/hivemq-influxdb-extension/
+    cp -vf /opt/hivemq/conf/extensions/hivemq-influxdb-extension/influxdb.properties /opt/hivemq/extensions/hivemq-influxdb-extension/ && \
+    mkdir -p /usr/local/bin && \
+    chmod +x /usr/local/bin/health_check.sh
 
 USER 10000
 
 HEALTHCHECK --interval=30s --timeout=3s --start-period=10s --retries=3 \
-    CMD bash -ec ' \
-    exec 3<>/dev/tcp/127.0.0.1/1883; \
-    printf "\x10\x0e\x00\x04MQTT\x04\x02\x00\x05\x00\x02hc" >&3; \
-    resp=$(dd bs=1 count=4 <&3 2>/dev/null | od -An -tx1 -v | tr -d " \\n"); \
-    [ "$resp" = "20020000" ]'
+    CMD /usr/local/bin/health_check.sh
