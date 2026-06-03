@@ -29,5 +29,9 @@ RUN apt-get update && apt-get install -y --no-install-recommends unzip && \
 
 USER 10000
 
-HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
-    CMD bash -c "echo > /dev/tcp/localhost/1883" || exit 1
+HEALTHCHECK --interval=30s --timeout=3s --start-period=10s --retries=3 \
+    CMD bash -ec ' \
+    exec 3<>/dev/tcp/127.0.0.1/1883; \
+    printf "\x10\x0e\x00\x04MQTT\x04\x02\x00\x05\x00\x02hc" >&3; \
+    resp=$(dd bs=1 count=4 <&3 2>/dev/null | od -An -tx1 -v | tr -d " \\n"); \
+    [ "$resp" = "20020000" ]'

@@ -11,6 +11,16 @@ COPY config/mosquitto/mosquitto.conf /mosquitto/config/mosquitto.conf
 
 # Ensure writable runtime paths for UID used by base image
 RUN mkdir -p /mosquitto/data /mosquitto/log && \
-    chown -R mosquitto:mosquitto /mosquitto
+    chown -R mosquitto:mosquitto /mosquitto && \
+    apk add --no-cache bash && \
+    apk del --no-cache --purge && \
+    rm -rf /var/cache/apk/*
 
 EXPOSE 1883 9001
+
+HEALTHCHECK --interval=30s --timeout=3s --start-period=10s --retries=3 \
+    CMD bash -ec ' \
+    exec 3<>/dev/tcp/127.0.0.1/1883; \
+    printf "\x10\x0e\x00\x04MQTT\x04\x02\x00\x05\x00\x02hc" >&3; \
+    resp=$(dd bs=1 count=4 <&3 2>/dev/null | od -An -tx1 -v | tr -d " \\n"); \
+    [ "$resp" = "20020000" ]'
