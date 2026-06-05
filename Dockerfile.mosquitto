@@ -11,8 +11,8 @@ COPY config/mosquitto/mosquitto.conf /mosquitto/config/mosquitto.conf
 COPY config/health_check.sh /usr/local/bin/health_check.sh
 
 # Ensure writable runtime paths for UID used by base image
-RUN mkdir -p /mosquitto/data /mosquitto/log /usr/local/bin && \
-    chown -R mosquitto:mosquitto /mosquitto && \
+RUN mkdir -p /mosquitto/data /mosquitto/log /usr/local/bin /opt/hivemq/data/ && \
+    chown -R mosquitto:mosquitto /mosquitto /opt/hivemq/ && \
     apk add --no-cache bash && \
     apk del --no-cache --purge && \
     rm -rf /var/cache/apk/* && \
