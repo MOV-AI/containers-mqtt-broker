@@ -5,6 +5,20 @@ All notable changes to the MQTT Broker container project are documented in this 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Added
+- Optional authentication for the HiveMQ broker: the File RBAC extension 4.6.19 is installed and
+  turned on by `MQTT_AUTH_ENABLED=true`, with a mounted `credentials.xml`. Off by default.
+- Example credentials with a `fleet` role and a per-robot `robot` role
+  (`config/hivemq/extensions/hivemq-file-rbac-extension/credentials.example.xml`).
+
+### Changed
+- The image entrypoint is now `mqtt-entrypoint.sh`, which applies the setting above and then runs
+  the base HiveMQ entrypoint.
+- The health check accepts a CONNACK that refuses the anonymous probe (codes 04 and 05), so it
+  passes when authentication is on.
+
 ## 1.2.1 [Unreleased]
 
 ### Added

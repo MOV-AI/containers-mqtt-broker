@@ -142,12 +142,48 @@ reportingInterval=10
 
 **Important**: This configuration is for development. For production:
 
-1. **Disable anonymous authentication** in `config/hivemq/config.xml`
-2. **Enable TLS** with proper certificates
+1. **Turn on authentication** with `MQTT_AUTH_ENABLED=true` (see "Authentication" below)
+2. **Enable TLS** with proper certificates, at the ingress or in `config.xml`
 3. **Use strong passwords** for all services
 4. **Configure firewall rules** for exposed ports
-5. **Implement client authentication** and authorization
 
+
+### Authentication (HiveMQ, opt-in)
+
+The image ships HiveMQ's [File RBAC extension](https://github.com/hivemq/hivemq-file-rbac-extension)
+4.6.19, **disabled by default**. Without the variable below, the broker accepts anonymous clients,
+as in 1.2.2.
+
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `MQTT_AUTH_ENABLED` | `false` | `true` enables the File RBAC extension and disables the allow-all extension. Every client must log in, and can only use the topics of its roles. |
+
+With `MQTT_AUTH_ENABLED=true`, mount a credentials file. The broker does not start without it:
+
+```yaml
+services:
+  mqtt-broker:
+    image: pubregistry.aws.cloud.mov.ai/ce/mqtt-broker:<version>
+    environment:
+      MQTT_AUTH_ENABLED: "true"
+    volumes:
+      - ./credentials.xml:/opt/hivemq/extensions/hivemq-file-rbac-extension/conf/credentials.xml:ro
+```
+
+- Start from `config/hivemq/extensions/hivemq-file-rbac-extension/credentials.example.xml`. It has
+  a `fleet` role (every `mov.ai/#` topic) and a `robot` role (only
+  `mov.ai/+/+/<its user name>/#`, so the user name is the robot's serial number). The example
+  passwords are `change-me`: replace every hash.
+- Passwords are hashed. Create a hash with the extension's jar, for example from the image:
+  ```bash
+  docker run --rm --entrypoint java pubregistry.aws.cloud.mov.ai/ce/mqtt-broker:<version> \
+    -jar /opt/hivemq/extensions/hivemq-file-rbac-extension/hivemq-file-rbac-extension-4.6.19.jar -q -p '<password>'
+  ```
+- The broker reloads the file every 60 seconds, so users can be added without a restart.
+- A client that publishes outside its topics is disconnected, and the message is dropped.
+- The health check accepts a refused anonymous login: the broker answered, so it is up.
+- TLS is expected at the ingress (for example a Traefik TCP router with TLS on 8883 in front of
+  1883). The `tls-tcp-listener` in `config.xml` stays commented out.
 
 ### Mosquitto-Specific Variables and Configurations
 

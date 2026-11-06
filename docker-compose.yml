@@ -91,6 +91,8 @@ services:
       - TZDATA_TZ=Europe/Lisbon
       - TZDATA=/usr/share/zoneinfo
       - JAVA_OPTS=-XX:+UnlockExperimentalVMOptions -XX:+UseNUMA -Xms350m -Xmx512m
+      # Authentication, off by default (see README, "Authentication"):
+      # - MQTT_AUTH_ENABLED=true
     depends_on:
       - influxdb
     networks:
@@ -98,6 +100,8 @@ services:
     volumes:
       - mqtt-broker:/opt/hivemq/data
       - ./config/hivemq:/opt/hivemq/conf/
+      # With MQTT_AUTH_ENABLED=true, mount the credentials file:
+      # - ./credentials.xml:/opt/hivemq/extensions/hivemq-file-rbac-extension/conf/credentials.xml:ro
   mqtt-edge-broker:
     build:
       context: .
