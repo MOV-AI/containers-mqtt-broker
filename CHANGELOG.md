@@ -13,6 +13,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Example credentials with a `fleet` role and a per-robot `robot` role
   (`config/hivemq/extensions/hivemq-file-rbac-extension/credentials.example.xml`).
 
+- Optional authentication for the Mosquitto edge broker with the same switch, `MQTT_AUTH_ENABLED=true`.
+  It needs mounted, non-empty `/mosquitto/config/passwd` and `/mosquitto/config/acl` files and exits
+  with an error if one is missing. New entrypoint `mosquitto-entrypoint.sh`. Off by default.
+
 ### Changed
 - The image entrypoint is now `mqtt-entrypoint.sh`, which applies the setting above and then runs
   the base HiveMQ entrypoint.

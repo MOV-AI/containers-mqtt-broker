@@ -9,6 +9,7 @@ LABEL environment="release"
 # Custom mosquitto config for edge workloads
 COPY config/mosquitto/mosquitto.conf /mosquitto/config/mosquitto.conf
 COPY config/health_check.sh /usr/local/bin/health_check.sh
+COPY config/mosquitto-entrypoint.sh /usr/local/bin/mosquitto-entrypoint.sh
 
 # Ensure writable runtime paths for UID used by base image
 RUN mkdir -p /mosquitto/data /mosquitto/log /usr/local/bin /opt/hivemq/data/ && \
@@ -16,9 +17,13 @@ RUN mkdir -p /mosquitto/data /mosquitto/log /usr/local/bin /opt/hivemq/data/ && 
     apk add --no-cache bash && \
     apk del --no-cache --purge && \
     rm -rf /var/cache/apk/* && \
-     chmod +x /usr/local/bin/health_check.sh
+     chmod +x /usr/local/bin/health_check.sh /usr/local/bin/mosquitto-entrypoint.sh
 
 EXPOSE 1883 9001
+
+# Applies MQTT_AUTH_ENABLED, then runs the base entrypoint and the base CMD
+ENTRYPOINT ["/usr/local/bin/mosquitto-entrypoint.sh"]
+CMD ["/usr/sbin/mosquitto", "-c", "/mosquitto/config/mosquitto.conf"]
 
 HEALTHCHECK --interval=30s --timeout=3s --start-period=10s --retries=3 \
     CMD /usr/local/bin/health_check.sh

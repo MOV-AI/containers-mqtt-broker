@@ -148,7 +148,13 @@ reportingInterval=10
 4. **Configure firewall rules** for exposed ports
 
 
-### Authentication (HiveMQ, opt-in)
+### Authentication (opt-in, both images)
+
+Both images use the same switch, `MQTT_AUTH_ENABLED=true`. Unset or `false`, the broker accepts
+anonymous clients, as before. With `true`, every client must log in, and the broker does not start
+when the mounted files are missing or empty.
+
+#### HiveMQ (`mqtt-broker`)
 
 The image ships HiveMQ's [File RBAC extension](https://github.com/hivemq/hivemq-file-rbac-extension)
 4.6.19, **disabled by default**. Without the variable below, the broker accepts anonymous clients,
@@ -156,7 +162,7 @@ as in 1.2.2.
 
 | Variable | Default | Description |
 |----------|---------|-------------|
-| `MQTT_AUTH_ENABLED` | `false` | `true` enables the File RBAC extension and disables the allow-all extension. Every client must log in, and can only use the topics of its roles. |
+| `MQTT_AUTH_ENABLED` | `false` | `true` enables the File RBAC extension and disables the allow-all extension. Every client must log in, and can only use the topics of its roles. The Mosquitto image uses the same variable (below). |
 
 With `MQTT_AUTH_ENABLED=true`, mount a credentials file. The broker does not start without it:
 
@@ -184,6 +190,38 @@ services:
 - The health check accepts a refused anonymous login: the broker answered, so it is up.
 - TLS is expected at the ingress (for example a Traefik TCP router with TLS on 8883 in front of
   1883). The `tls-tcp-listener` in `config.xml` stays commented out.
+
+#### Mosquitto (`mqtt-edge-broker`)
+
+With `MQTT_AUTH_ENABLED=true`, mount a password file and an ACL file. The entrypoint
+(`mosquitto-entrypoint.sh`) stops with exit code 1 and an error message if either file is missing or
+empty:
+
+```yaml
+services:
+  mqtt-edge-broker:
+    image: pubregistry.aws.cloud.mov.ai/ce/mqtt-edge-broker:<version>
+    environment:
+      MQTT_AUTH_ENABLED: "true"
+    volumes:
+      - ./passwd:/mosquitto/config/passwd:ro
+      - ./acl:/mosquitto/config/acl:ro
+```
+
+- Create the password file with `mosquitto_passwd`, for example from the image:
+  `docker run --rm -v "$PWD:/w" --entrypoint mosquitto_passwd <image> -c -b /w/passwd <user> '<password>'`.
+  The ACL file is the standard Mosquitto format (`user <name>` lines followed by `topic ...` lines).
+- The configuration file is chosen like this:
+  - If the active `/mosquitto/config/mosquitto.conf` (the image default or a file you mount) already
+    has `allow_anonymous false`, a `password_file` line and an `acl_file` line, the broker uses it
+    as it is.
+  - Otherwise the entrypoint builds `/tmp/mosquitto-auth.conf` from that file: it removes any
+    `allow_anonymous`, `password_file` and `acl_file` line, and adds `allow_anonymous false`,
+    `password_file /mosquitto/config/passwd` and `acl_file /mosquitto/config/acl` at the top. The
+    broker starts with that file. So mounting only `passwd` and `acl` is enough.
+- Mosquitto 2.0 warns when the files are world-readable or not owned by `mosquitto`. It still loads
+  them. Use mode 0640 and `chown 1883` where you can.
+- The health check accepts a refused anonymous login: the broker answered, so it is up.
 
 ### Mosquitto-Specific Variables and Configurations
 
