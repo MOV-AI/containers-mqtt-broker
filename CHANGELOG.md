@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Removed
+- **Breaking:** the MQTT over WebSocket listeners are removed from both images: HiveMQ
+  `<websocket-listener>` on port 8000 (path `/mqtt`) and Mosquitto `listener 9001` with
+  `protocol websockets`. `Dockerfile.mosquitto` no longer exposes 9001, and `docker-compose.yml` no
+  longer publishes 8000 and 9001. Web clients that connect over WebSocket must use MQTT over TCP/TLS
+  through haproxy instead. A mounted `config.xml` or `mosquitto.conf` that still has these
+  listeners keeps them.
+
 ### Added
 - Optional authentication for the HiveMQ broker: the File RBAC extension 4.6.19 is installed and
   turned on by `MQTT_AUTH_ENABLED=true`, with a mounted `credentials.xml`. Off by default.

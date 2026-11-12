@@ -6,7 +6,7 @@ Production-ready MQTT broker solution with 2 different runtime profiles:
 
 ## Features
 
-- **MQTT 5.0 Support** with TCP (1883) and WebSocket (8000) protocols
+- **MQTT 5.0 Support** over TCP (1883); no MQTT over WebSocket listener
 - **High Performance** with overload protection and rate limiting
 - **Monitoring** via InfluxDB integration and health API (localhost:8889)
 - **Persistence** with configurable session and message expiry
@@ -59,10 +59,8 @@ docker build -f Dockerfile.mosquitto -t mqtt-edge-broker .
 | Service Port | Exposed Port | Protocol | Description |
 |--------------|--------------|----------|-------------|
 | 1883 | 1883 | MQTT/TCP | Standard MQTT (HiveMQ) |
-| 8000 | 8000 | MQTT/WebSocket | MQTT over WebSocket (HiveMQ) |
 | 8080 | 8080 | HTTP | Management REST API (HiveMQ) |
 | 1883 | 1884 | MQTT/TCP | Edge broker (Mosquitto host port) |
-| 9001 | 9001 | MQTT/WebSocket | Edge broker WebSocket (host port) |
 | 8086 | 8086 | HTTP | InfluxDB API |
 | 8888 | 8888 | HTTP | Monitoring Dashboard (`/monitoring`) |
 | 8889 | 8889 | HTTP | Health Check |
@@ -79,7 +77,7 @@ docker build -f Dockerfile.mosquitto -t mqtt-edge-broker .
 - Base image: `eclipse-mosquitto` 2.1.2 (Alpine), pinned by tag and digest in `Dockerfile.mosquitto`; Dependabot proposes updates
 - Config: `config/mosquitto/mosquitto.conf`
 - Data volume: `mqtt-edge-broker`
-- Host ports: `1884` (MQTT/TCP) and `9001` (WebSocket)
+- Host port: `1884` (MQTT/TCP)
 
 ## Configuration
 
@@ -154,6 +152,10 @@ reportingInterval=10
 Both images use the same switch, `MQTT_AUTH_ENABLED=true`. Unset or `false`, the broker accepts
 anonymous clients, as before. With `true`, every client must log in, and the broker does not start
 when the mounted files are missing or empty.
+
+Both images have only MQTT over TCP listeners (container port 1883). They have no MQTT over
+WebSocket listener: HiveMQ port 8000 and Mosquitto port 9001 are removed. Web clients must connect
+with MQTT over TCP/TLS through haproxy.
 
 #### HiveMQ (`mqtt-broker`)
 

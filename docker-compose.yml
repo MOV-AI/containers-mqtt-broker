@@ -83,7 +83,6 @@ services:
       dockerfile: Dockerfile
     ports:
       - "8080:8080"
-      - "8000:8000"
       - "1883:1883"
     restart: always
     environment:
@@ -108,7 +107,6 @@ services:
       dockerfile: Dockerfile.mosquitto
     ports:
       - "1884:1883"
-      - "9001:9001"
     restart: always
     environment:
       - TZ=Europe/Lisbon
