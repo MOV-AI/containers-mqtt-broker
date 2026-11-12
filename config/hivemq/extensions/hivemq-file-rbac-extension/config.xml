@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<!-- File RBAC extension settings. The extension is off unless MQTT_AUTH_ENABLED=true. -->
+<extension-configuration>
+    <!-- Seconds between reloads of credentials.xml: users can change without a restart -->
+    <credentials-reload-interval>60</credentials-reload-interval>
+
+    <!-- Passwords in credentials.xml are hashed with the extension's jar (see README) -->
+    <password-type>HASHED</password-type>
+</extension-configuration>

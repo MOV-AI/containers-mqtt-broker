@@ -83,7 +83,6 @@ services:
       dockerfile: Dockerfile
     ports:
       - "8080:8080"
-      - "8000:8000"
       - "1883:1883"
     restart: always
     environment:
@@ -91,6 +90,8 @@ services:
       - TZDATA_TZ=Europe/Lisbon
       - TZDATA=/usr/share/zoneinfo
       - JAVA_OPTS=-XX:+UnlockExperimentalVMOptions -XX:+UseNUMA -Xms350m -Xmx512m
+      # Authentication, off by default (see README, "Authentication"):
+      # - MQTT_AUTH_ENABLED=true
     depends_on:
       - influxdb
     networks:
@@ -98,23 +99,29 @@ services:
     volumes:
       - mqtt-broker:/opt/hivemq/data
       - ./config/hivemq:/opt/hivemq/conf/
+      # With MQTT_AUTH_ENABLED=true, mount the credentials file:
+      # - ./credentials.xml:/opt/hivemq/extensions/hivemq-file-rbac-extension/conf/credentials.xml:ro
   mqtt-edge-broker:
     build:
       context: .
       dockerfile: Dockerfile.mosquitto
     ports:
       - "1884:1883"
-      - "9001:9001"
     restart: always
     environment:
       - TZ=Europe/Lisbon
       - TZDATA_TZ=Europe/Lisbon
       - TZDATA=/usr/share/zoneinfo
+      # Authentication, off by default (see README, "Authentication"):
+      # - MQTT_AUTH_ENABLED=true
     networks:
       - influxdb
     volumes:
       - mqtt-edge-broker:/opt/hivemq/conf/ # Note: parity with mqtt-broker for data persistence
       - ./config/mosquitto/mosquitto.conf:/mosquitto/config/mosquitto.conf:ro
+      # With MQTT_AUTH_ENABLED=true, mount the password and ACL files:
+      # - ./passwd:/mosquitto/config/passwd:ro
+      # - ./acl:/mosquitto/config/acl:ro
 volumes:
   influxdb:
   monitoring-chronograf:

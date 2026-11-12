@@ -6,7 +6,7 @@ Production-ready MQTT broker solution with 2 different runtime profiles:
 
 ## Features
 
-- **MQTT 5.0 Support** with TCP (1883) and WebSocket (8000) protocols
+- **MQTT 5.0 Support** over TCP (1883); no MQTT over WebSocket listener
 - **High Performance** with overload protection and rate limiting
 - **Monitoring** via InfluxDB integration and health API (localhost:8889)
 - **Persistence** with configurable session and message expiry
@@ -59,10 +59,8 @@ docker build -f Dockerfile.mosquitto -t mqtt-edge-broker .
 | Service Port | Exposed Port | Protocol | Description |
 |--------------|--------------|----------|-------------|
 | 1883 | 1883 | MQTT/TCP | Standard MQTT (HiveMQ) |
-| 8000 | 8000 | MQTT/WebSocket | MQTT over WebSocket (HiveMQ) |
 | 8080 | 8080 | HTTP | Management REST API (HiveMQ) |
 | 1883 | 1884 | MQTT/TCP | Edge broker (Mosquitto host port) |
-| 9001 | 9001 | MQTT/WebSocket | Edge broker WebSocket (host port) |
 | 8086 | 8086 | HTTP | InfluxDB API |
 | 8888 | 8888 | HTTP | Monitoring Dashboard (`/monitoring`) |
 | 8889 | 8889 | HTTP | Health Check |
@@ -76,9 +74,10 @@ docker build -f Dockerfile.mosquitto -t mqtt-edge-broker .
 
 ### Edge Broker (Mosquitto)
 - Service: `mqtt-edge-broker`
+- Base image: `eclipse-mosquitto` 2.1.2 (Alpine), pinned by tag and digest in `Dockerfile.mosquitto`; Dependabot proposes updates
 - Config: `config/mosquitto/mosquitto.conf`
 - Data volume: `mqtt-edge-broker`
-- Host ports: `1884` (MQTT/TCP) and `9001` (WebSocket)
+- Host port: `1884` (MQTT/TCP)
 
 ## Configuration
 
@@ -142,12 +141,96 @@ reportingInterval=10
 
 **Important**: This configuration is for development. For production:
 
-1. **Disable anonymous authentication** in `config/hivemq/config.xml`
-2. **Enable TLS** with proper certificates
+1. **Turn on authentication** with `MQTT_AUTH_ENABLED=true` (see "Authentication" below)
+2. **Enable TLS** with proper certificates, at the ingress or in `config.xml`
 3. **Use strong passwords** for all services
 4. **Configure firewall rules** for exposed ports
-5. **Implement client authentication** and authorization
 
+
+### Authentication (opt-in, both images)
+
+Both images use the same switch, `MQTT_AUTH_ENABLED=true`. Unset or `false`, the broker accepts
+anonymous clients, as before. With `true`, every client must log in, and the broker does not start
+when the mounted files are missing or empty.
+
+Both images have only MQTT over TCP listeners (container port 1883). They have no MQTT over
+WebSocket listener: HiveMQ port 8000 and Mosquitto port 9001 are removed. Web clients must connect
+with MQTT over TCP/TLS through haproxy.
+
+#### HiveMQ (`mqtt-broker`)
+
+The image ships HiveMQ's [File RBAC extension](https://github.com/hivemq/hivemq-file-rbac-extension)
+4.6.19, **disabled by default**. Without the variable below, the broker accepts anonymous clients,
+as in 1.2.2.
+
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `MQTT_AUTH_ENABLED` | `false` | `true` enables the File RBAC extension and disables the allow-all extension. Every client must log in, and can only use the topics of its roles. The Mosquitto image uses the same variable (below). |
+
+With `MQTT_AUTH_ENABLED=true`, mount a credentials file. The broker does not start without it:
+
+```yaml
+services:
+  mqtt-broker:
+    image: pubregistry.aws.cloud.mov.ai/ce/mqtt-broker:<version>
+    environment:
+      MQTT_AUTH_ENABLED: "true"
+    volumes:
+      - ./credentials.xml:/opt/hivemq/extensions/hivemq-file-rbac-extension/conf/credentials.xml:ro
+```
+
+- Start from `config/hivemq/extensions/hivemq-file-rbac-extension/credentials.example.xml`. It has
+  a `fleet` role (every `mov.ai/#` topic) and a `robot` role (only
+  `mov.ai/+/+/<its user name>/#`, so the user name is the robot's serial number). The example
+  passwords are `change-me`: replace every hash.
+- Passwords are hashed. Create a hash with the extension's jar, for example from the image:
+  ```bash
+  docker run --rm --entrypoint java pubregistry.aws.cloud.mov.ai/ce/mqtt-broker:<version> \
+    -jar /opt/hivemq/extensions/hivemq-file-rbac-extension/hivemq-file-rbac-extension-4.6.19.jar -q -p '<password>'
+  ```
+- The broker reloads the file every 60 seconds, so users can be added without a restart.
+- A client that publishes outside its topics is disconnected, and the message is dropped.
+- The health check accepts a refused anonymous login: the broker answered, so it is up.
+- TLS is expected at the ingress (for example a Traefik TCP router with TLS on 8883 in front of
+  1883). The `tls-tcp-listener` in `config.xml` stays commented out.
+
+#### Mosquitto (`mqtt-edge-broker`)
+
+With `MQTT_AUTH_ENABLED=true`, mount a password file and an ACL file. The entrypoint
+(`mosquitto-entrypoint.sh`) stops with exit code 1 and an error message if either file is missing or
+empty:
+
+```yaml
+services:
+  mqtt-edge-broker:
+    image: pubregistry.aws.cloud.mov.ai/ce/mqtt-edge-broker:<version>
+    environment:
+      MQTT_AUTH_ENABLED: "true"
+    volumes:
+      - ./passwd:/mosquitto/config/passwd:ro
+      - ./acl:/mosquitto/config/acl:ro
+```
+
+- Create the password file with `mosquitto_passwd`, for example from the image:
+  `docker run --rm -v "$PWD:/w" --entrypoint mosquitto_passwd <image> -c -b /w/passwd <user> '<password>'`.
+  The ACL file is the standard Mosquitto format (`user <name>` lines followed by `topic ...` lines).
+- At start the entrypoint (root, before the base image drops privileges) copies `passwd` and `acl`
+  to `/run/mosquitto-auth/`: owner `mosquitto`, folder mode 0700, files 0600. The folder is not in
+  a volume, so credentials never reach the data volume, and it is recreated at each start. The
+  mounted files are only read, never changed, so any owner and mode (for example root, 0644) is
+  fine and Mosquitto logs no "world readable" or "not owned" warning.
+- The broker always uses a generated config, `/run/mosquitto-auth/mosquitto.conf`. It is the active
+  `/mosquitto/config/mosquitto.conf` (the image default or a file you mount) without its
+  `allow_anonymous`, `password_file` and `acl_file` lines, followed by `allow_anonymous false`,
+  `password_file /run/mosquitto-auth/passwd` and `acl_file /run/mosquitto-auth/acl`. Mosquitto keeps
+  the last global value, so a file loaded with `include_dir` cannot turn anonymous access on again.
+  So mounting only `passwd` and `acl` is enough, and a config with its own auth lines also works.
+- The entrypoint expects global security settings. It stops with exit code 1 and an error if the
+  config or a file in an `include_dir` folder sets `per_listener_settings true`, or if the broker
+  command does not use `-c /mosquitto/config/mosquitto.conf`.
+- The files are read when the container starts. After a change to a password or an ACL, restart the
+  container (movai-service recreates the broker when they change).
+- The health check accepts a refused anonymous login: the broker answered, so it is up.
 
 ### Mosquitto-Specific Variables and Configurations
 
