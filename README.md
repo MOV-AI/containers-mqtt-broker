@@ -76,6 +76,7 @@ docker build -f Dockerfile.mosquitto -t mqtt-edge-broker .
 
 ### Edge Broker (Mosquitto)
 - Service: `mqtt-edge-broker`
+- Base image: `eclipse-mosquitto` 2.1.2 (Alpine), pinned by tag and digest in `Dockerfile.mosquitto`; Dependabot proposes updates
 - Config: `config/mosquitto/mosquitto.conf`
 - Data volume: `mqtt-edge-broker`
 - Host ports: `1884` (MQTT/TCP) and `9001` (WebSocket)
@@ -211,16 +212,22 @@ services:
 - Create the password file with `mosquitto_passwd`, for example from the image:
   `docker run --rm -v "$PWD:/w" --entrypoint mosquitto_passwd <image> -c -b /w/passwd <user> '<password>'`.
   The ACL file is the standard Mosquitto format (`user <name>` lines followed by `topic ...` lines).
-- The configuration file is chosen like this:
-  - If the active `/mosquitto/config/mosquitto.conf` (the image default or a file you mount) already
-    has `allow_anonymous false`, a `password_file` line and an `acl_file` line, the broker uses it
-    as it is.
-  - Otherwise the entrypoint builds `/tmp/mosquitto-auth.conf` from that file: it removes any
-    `allow_anonymous`, `password_file` and `acl_file` line, and adds `allow_anonymous false`,
-    `password_file /mosquitto/config/passwd` and `acl_file /mosquitto/config/acl` at the top. The
-    broker starts with that file. So mounting only `passwd` and `acl` is enough.
-- Mosquitto 2.0 warns when the files are world-readable or not owned by `mosquitto`. It still loads
-  them. Use mode 0640 and `chown 1883` where you can.
+- At start the entrypoint (root, before the base image drops privileges) copies `passwd` and `acl`
+  to `/run/mosquitto-auth/`: owner `mosquitto`, folder mode 0700, files 0600. The folder is not in
+  a volume, so credentials never reach the data volume, and it is recreated at each start. The
+  mounted files are only read, never changed, so any owner and mode (for example root, 0644) is
+  fine and Mosquitto logs no "world readable" or "not owned" warning.
+- The broker always uses a generated config, `/run/mosquitto-auth/mosquitto.conf`. It is the active
+  `/mosquitto/config/mosquitto.conf` (the image default or a file you mount) without its
+  `allow_anonymous`, `password_file` and `acl_file` lines, followed by `allow_anonymous false`,
+  `password_file /run/mosquitto-auth/passwd` and `acl_file /run/mosquitto-auth/acl`. Mosquitto keeps
+  the last global value, so a file loaded with `include_dir` cannot turn anonymous access on again.
+  So mounting only `passwd` and `acl` is enough, and a config with its own auth lines also works.
+- The entrypoint expects global security settings. It stops with exit code 1 and an error if the
+  config or a file in an `include_dir` folder sets `per_listener_settings true`, or if the broker
+  command does not use `-c /mosquitto/config/mosquitto.conf`.
+- The files are read when the container starts. After a change to a password or an ACL, restart the
+  container (movai-service recreates the broker when they change).
 - The health check accepts a refused anonymous login: the broker answered, so it is up.
 
 ### Mosquitto-Specific Variables and Configurations

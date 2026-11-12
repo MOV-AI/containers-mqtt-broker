@@ -16,8 +16,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Optional authentication for the Mosquitto edge broker with the same switch, `MQTT_AUTH_ENABLED=true`.
   It needs mounted, non-empty `/mosquitto/config/passwd` and `/mosquitto/config/acl` files and exits
   with an error if one is missing. New entrypoint `mosquitto-entrypoint.sh`. Off by default.
+  The entrypoint copies both files to `/run/mosquitto-auth/` (owner `mosquitto`, mode 0700 and 0600,
+  outside the data volume) and always starts the broker with a generated config that points at the
+  copies, so Mosquitto no longer warns about world-readable or not-owned files, and an `include_dir`
+  file cannot re-enable anonymous access. Files are read at start: restart to apply a change.
+  `per_listener_settings true` is refused with a clear error when authentication is on.
+- Dependabot now watches the Docker base images (`docker` ecosystem).
 
 ### Changed
+- Mosquitto base image: `eclipse-mosquitto:2.0` (floating tag) is now pinned to
+  `eclipse-mosquitto:2.1.2-alpine` with its digest (Mosquitto 2.1.2, Alpine 3.23), for reproducible
+  builds. The 2.1 base entrypoint only changes the owner of `/mosquitto/data`, so the
+  "chown: Read-only file system" noise for `:ro` mounts is gone. `password_file`, `acl_file` and
+  `per_listener_settings` are deprecated in 2.1 (removal in 3.0) but still work and log no warning.
+  Persistence data written by 2.0 is read by 2.1.
+- The Mosquitto Dockerfile no longer runs the no-op `apk del --purge` and `rm -rf /var/cache/apk`
+  (`apk add --no-cache` leaves no cache).
 - The image entrypoint is now `mqtt-entrypoint.sh`, which applies the setting above and then runs
   the base HiveMQ entrypoint.
 - The health check accepts a CONNACK that refuses the anonymous probe (codes 04 and 05), so it
