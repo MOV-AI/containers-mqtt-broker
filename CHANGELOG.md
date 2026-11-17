@@ -42,8 +42,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   (`apk add --no-cache` leaves no cache).
 - The image entrypoint is now `mqtt-entrypoint.sh`, which applies the setting above and then runs
   the base HiveMQ entrypoint.
-- The health check accepts a CONNACK that refuses the anonymous probe (codes 04 and 05), so it
-  passes when authentication is on.
+- The health check depends on `MQTT_AUTH_ENABLED`. With `true`, the anonymous probe must be refused
+  (CONNACK codes 04 or 05). A broker that accepts it does not enforce authentication and is reported
+  unhealthy. Otherwise the probe must be accepted (code 00), as before.
+- With `MQTT_AUTH_ENABLED=true`, the HiveMQ entrypoint also stops with exit code 1 and an error
+  when UID 10000 cannot read the mounted `credentials.xml`.
 
 ## 1.2.1 [Unreleased]
 

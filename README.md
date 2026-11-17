@@ -188,9 +188,12 @@ services:
   docker run --rm --entrypoint java pubregistry.aws.cloud.mov.ai/ce/mqtt-broker:<version> \
     -jar /opt/hivemq/extensions/hivemq-file-rbac-extension/hivemq-file-rbac-extension-4.6.19.jar -q -p '<password>'
   ```
+- The broker runs as UID 10000, so the file must be readable by that user (for example mode 0644,
+  or owner 10000). If it is missing, empty or not readable, the entrypoint stops with exit code 1.
 - The broker reloads the file every 60 seconds, so users can be added without a restart.
 - A client that publishes outside its topics is disconnected, and the message is dropped.
-- The health check accepts a refused anonymous login: the broker answered, so it is up.
+- The health check expects the anonymous probe to be refused. If the broker accepts it, the
+  container is reported unhealthy, because authentication is not enforced.
 - TLS is expected at the ingress (for example a Traefik TCP router with TLS on 8883 in front of
   1883). The `tls-tcp-listener` in `config.xml` stays commented out.
 
@@ -230,7 +233,8 @@ services:
   command does not use `-c /mosquitto/config/mosquitto.conf`.
 - The files are read when the container starts. After a change to a password or an ACL, restart the
   container (movai-service recreates the broker when they change).
-- The health check accepts a refused anonymous login: the broker answered, so it is up.
+- The health check expects the anonymous probe to be refused. If the broker accepts it, the
+  container is reported unhealthy, because authentication is not enforced.
 
 ### Mosquitto-Specific Variables and Configurations
 

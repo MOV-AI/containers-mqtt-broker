@@ -18,6 +18,11 @@ if [[ "${MQTT_AUTH_ENABLED:-false}" == "true" ]]; then
     echo "[mqtt-entrypoint][ERROR] Mount a credentials file there (see README, \"Authentication\")." >&2
     exit 1
   fi
+  if [[ ! -r "$CREDENTIALS" ]]; then
+    echo "[mqtt-entrypoint][ERROR] MQTT_AUTH_ENABLED=true but $CREDENTIALS is not readable by UID $(id -u)." >&2
+    echo "[mqtt-entrypoint][ERROR] The broker runs as UID 10000: make the file readable by it (see README, \"Authentication\")." >&2
+    exit 1
+  fi
   echo "[mqtt-entrypoint] Authentication on: File RBAC extension enabled, allow-all extension disabled"
   rm -f "$RBAC_DIR/DISABLED"
   # The base entrypoint removes the allow-all extension unless this is "true"
