@@ -47,6 +47,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   unhealthy. Otherwise the probe must be accepted (code 00), as before.
 - With `MQTT_AUTH_ENABLED=true`, the HiveMQ entrypoint also stops with exit code 1 and an error
   when UID 10000 cannot read the mounted `credentials.xml`.
+- Both entrypoints require the mounted credential files to be regular files: a missing host file in
+  a short-form bind mount, which Docker creates as a directory, now stops the broker with the error
+  instead of starting it. The Mosquitto non-root fallback uses a new private `mktemp` folder.
 
 ## 1.2.1 [Unreleased]
 

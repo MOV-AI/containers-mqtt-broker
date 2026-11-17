@@ -13,8 +13,9 @@ RBAC_DIR=/opt/hivemq/extensions/hivemq-file-rbac-extension
 CREDENTIALS="$RBAC_DIR/conf/credentials.xml"
 
 if [[ "${MQTT_AUTH_ENABLED:-false}" == "true" ]]; then
-  if [[ ! -s "$CREDENTIALS" ]]; then
-    echo "[mqtt-entrypoint][ERROR] MQTT_AUTH_ENABLED=true but $CREDENTIALS is missing or empty." >&2
+  # -f: a missing host file in a short-form bind mount is created as a directory by Docker/Compose
+  if [[ ! -f "$CREDENTIALS" || ! -s "$CREDENTIALS" ]]; then
+    echo "[mqtt-entrypoint][ERROR] MQTT_AUTH_ENABLED=true but $CREDENTIALS is missing, empty or not a regular file." >&2
     echo "[mqtt-entrypoint][ERROR] Mount a credentials file there (see README, \"Authentication\")." >&2
     exit 1
   fi

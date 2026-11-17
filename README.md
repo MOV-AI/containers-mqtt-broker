@@ -151,7 +151,7 @@ reportingInterval=10
 
 Both images use the same switch, `MQTT_AUTH_ENABLED=true`. Unset or `false`, the broker accepts
 anonymous clients, as before. With `true`, every client must log in, and the broker does not start
-when the mounted files are missing or empty.
+when the mounted files are missing, empty or not regular files.
 
 Both images have only MQTT over TCP listeners (container port 1883). They have no MQTT over
 WebSocket listener: HiveMQ port 8000 and Mosquitto port 9001 are removed. Web clients must connect

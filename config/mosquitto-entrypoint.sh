@@ -39,11 +39,15 @@ if [ "${MQTT_AUTH_ENABLED:-false}" != "true" ]; then
   exec /docker-entrypoint.sh "$@"
 fi
 
+# -f: a missing host file in a short-form bind mount is created as a directory by Docker/Compose
 for file in "$PASSWD" "$ACL"; do
-  [ -s "$file" ] ||
-    fail "MQTT_AUTH_ENABLED=true but $file is missing or empty. Mount the passwd and acl files in /mosquitto/config (see README, \"Authentication\")."
+  if [ ! -f "$file" ] || [ ! -s "$file" ]; then
+    fail "MQTT_AUTH_ENABLED=true but $file is missing, empty or not a regular file. Mount the passwd and acl files in /mosquitto/config (see README, \"Authentication\")."
+  fi
 done
-[ -s "$CONF" ] || fail "MQTT_AUTH_ENABLED=true but $CONF is missing or empty."
+if [ ! -f "$CONF" ] || [ ! -s "$CONF" ]; then
+  fail "MQTT_AUTH_ENABLED=true but $CONF is missing, empty or not a regular file."
+fi
 
 # The command must use the active config, or the settings below would not apply
 found=0
@@ -67,10 +71,12 @@ fi
 # Private, non-persistent copies owned by the broker user (see the header)
 if [ "$(id -u)" != 0 ]; then
   BROKER_USER=$(id -un)
-  AUTH_DIR=/tmp/mosquitto-auth # /run is writable only by root
+  # /run is writable only by root: use a new private folder (mktemp makes it mode 0700)
+  AUTH_DIR=$(mktemp -d /tmp/mosquitto-auth.XXXXXX) || fail "Cannot create a folder in /tmp"
+else
+  rm -rf "$AUTH_DIR"
+  (umask 077 && mkdir -p "$AUTH_DIR") || fail "Cannot create $AUTH_DIR"
 fi
-rm -rf "$AUTH_DIR"
-(umask 077 && mkdir -p "$AUTH_DIR") || fail "Cannot create $AUTH_DIR"
 for file in "$PASSWD" "$ACL"; do
   (umask 077 && cp "$file" "$AUTH_DIR/$(basename "$file")") || fail "Cannot read $file"
 done
