@@ -15,6 +15,9 @@ jobs:
     uses: MOV-AI/.github/.github/workflows/docker-workflow.yml@v3
     with:
       manifest_file: images-manifest.yml
+      # One-off: publish exactly 1.3.0 (the automatic patch bump had released 1.2.3). Set back to
+      # "auto" (or remove) right after the 1.3.0 release, so later merges bump 1.3.x again.
+      version: 1.3.0
       create_release: ${{ contains(github.ref, 'refs/heads/main') || contains(github.ref, 'refs/tags/v') }}
       deploy: ${{ contains(github.ref, 'refs/heads/main') || contains(github.ref, 'refs/tags/v')}}
       push_latest: ${{ contains(github.ref, 'refs/heads/main') || contains(github.ref, 'refs/tags/v') }}

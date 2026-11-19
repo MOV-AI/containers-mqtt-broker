@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.3.0] - 2026-11-19
+
+1.2.3 was published by mistake from the same merge (the release workflow bumps the patch number by
+default). It holds the same changes; use 1.3.0.
+
 ### Removed
 - **Breaking:** the MQTT over WebSocket listeners are removed from both images: HiveMQ
   `<websocket-listener>` on port 8000 (path `/mqtt`) and Mosquitto `listener 9001` with
