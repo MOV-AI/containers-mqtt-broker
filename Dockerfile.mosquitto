@@ -1,4 +1,5 @@
-FROM eclipse-mosquitto:2.0
+# Pinned by tag and digest for reproducible builds. Dependabot (docker ecosystem) bumps both.
+FROM eclipse-mosquitto:2.1.2-alpine@sha256:75d6662dee52c947dc9dd9c29f1d8d7ffef78ddaf38001caa09755681e8bbc98
 
 # Labels
 LABEL description="MOV.AI MQTT Edge Broker Image"
@@ -9,16 +10,19 @@ LABEL environment="release"
 # Custom mosquitto config for edge workloads
 COPY config/mosquitto/mosquitto.conf /mosquitto/config/mosquitto.conf
 COPY config/health_check.sh /usr/local/bin/health_check.sh
+COPY config/mosquitto-entrypoint.sh /usr/local/bin/mosquitto-entrypoint.sh
 
 # Ensure writable runtime paths for UID used by base image
 RUN mkdir -p /mosquitto/data /mosquitto/log /usr/local/bin /opt/hivemq/data/ && \
     chown -R mosquitto:mosquitto /mosquitto /opt/hivemq/ && \
     apk add --no-cache bash && \
-    apk del --no-cache --purge && \
-    rm -rf /var/cache/apk/* && \
-     chmod +x /usr/local/bin/health_check.sh
+    chmod +x /usr/local/bin/health_check.sh /usr/local/bin/mosquitto-entrypoint.sh
 
-EXPOSE 1883 9001
+EXPOSE 1883
+
+# Applies MQTT_AUTH_ENABLED, then runs the base entrypoint and the base CMD
+ENTRYPOINT ["/usr/local/bin/mosquitto-entrypoint.sh"]
+CMD ["/usr/sbin/mosquitto", "-c", "/mosquitto/config/mosquitto.conf"]
 
 HEALTHCHECK --interval=30s --timeout=3s --start-period=10s --retries=3 \
     CMD /usr/local/bin/health_check.sh
