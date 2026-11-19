@@ -112,20 +112,6 @@
 
             <no-delay>true</no-delay>
         </tls-tcp-listener> -->
-
-        <!-- WebSocket Listener for web-based robot management interfaces -->
-        <websocket-listener>
-            <port>8000</port>
-            <bind-address>0.0.0.0</bind-address>
-            <path>/mqtt</path>
-            <name>websocket</name>
-            <allow-extensions>true</allow-extensions>
-
-            <connect-overload-protection>
-                <enabled>true</enabled>
-                <threshold>30</threshold>
-            </connect-overload-protection>
-        </websocket-listener>
     </listeners>
 
     <!-- Security Configuration -->
